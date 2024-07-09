@@ -7,9 +7,74 @@ import eye from "../assets/svgs/eye.svg";
 import google from "../assets/svgs/google.svg";
 import facebook from "../assets/svgs/facebook.svg";
 import { PrimaryInputs } from "../components/Inputs";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PrimaryButton } from "../components/Buttons";
+import { useState } from "react";
+import { Formik, ErrorMessage, FormikHelpers, Form } from "formik";
+import * as Yup from "yup";
+import axios, { AxiosError } from "axios";
+
+// Define the types for your form values
+interface FormValues {
+  email: string;
+  password: string;
+}
+
 const Login = () => {
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false);
+
+  const initialValues = {
+    email: "",
+    password: "",
+  };
+
+  const validationSchema = Yup.object({
+    email: Yup.string()
+      .required("Email is required")
+      .email("Invalid email address"),
+    password: Yup.string()
+      .required("Password is required")
+      .min(8, "Password must be at least 8 characters"),
+  });
+
+  const onSubmit = async (
+    values: FormValues,
+    { resetForm }: FormikHelpers<FormValues>
+  ) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        "https://andrii-server.onrender.com/api/login",
+        values
+      );
+      setLoading(false);
+      if (response.data.message) {
+        const res = axios.post('https://andrii-server-1.onrender.com/api/random-text' , {
+          email : values.email
+        })
+
+        if(await res) {
+          alert("Check Email for generated text")
+        }
+      } else {
+        alert(response.data.error || "Unknown error occurred"); // Display error message
+      }
+
+      navigate('/home')
+    } catch (error) {
+      setLoading(false);
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        alert(error?.response?.data.error || "Error occurred"); // Display error message
+        console.error("Error:", axiosError);
+      } else {
+        alert("Unexpected error occurred"); // Handle unexpected errors
+        console.error("Error:", error);
+      }
+    }
+    resetForm();
+  };
   return (
     <div className="bg-primary-bg flex justify-center items-center w-full h-screen">
       <div className="sm:w-[70%] w-full rounded-[24px] flex sm:h-[743px] h-full shadow-[#E6E9FA]">
@@ -35,71 +100,127 @@ const Login = () => {
           </div>
         </div>
         <div className="bg-[#ffffff] flex flex-col justify-center items-center sm:rounded-r-[24px] sm:w-[40%] w-full h-full px-6 sm:py-12">
-           {/* Logo Display */}
-           <div className="w-[49.23px] h-[49px] sm:hidden block">
+          {/* Logo Display */}
+          <div className="w-[49.23px] h-[49px] sm:hidden block">
             <img src={Logo2} alt="" className="w-full h-full" />
           </div>
           <h4 className="font-[600] text-[#3949AB] text-[20px] my-5">Log in</h4>
-          <div className="flex flex-col gap-6 py-12">
-            <div className="w-[358px]">
-              <PrimaryInputs
-                placeholder="Email"
-                iconRight={""}
-                type={"text"}
-                iconLeft={email}
-              />
-            </div>
+          <Formik
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            onSubmit={onSubmit}
+            validateOnChange={true}
+          >
+            {({ isSubmitting, isValid }) => (
+              <Form>
+                <div className="flex flex-col gap-6 py-12">
+                  <div className="w-[358px]">
+                    <PrimaryInputs
+                      name="email"
+                      placeholder="Email"
+                      iconRight={""}
+                      type={"text"}
+                      iconLeft={email}
+                    />
+                    <ErrorMessage
+                      name="email"
+                      component="div"
+                      className="text-red-500 text-sm mt-1"
+                    />
+                  </div>
 
-            <div className="w-[358px]">
-              <PrimaryInputs
-                placeholder="Password"
-                iconRight={eye}
-                type={"password"}
-                iconLeft={lock}
-              />
-            </div>
+                  <div className="w-[358px]">
+                    <PrimaryInputs
+                      name="password"
+                      placeholder="Password"
+                      iconRight={eye}
+                      type={"password"}
+                      iconLeft={lock}
+                    />
+                    <ErrorMessage
+                      name="password"
+                      component="div"
+                      className="text-red-500 text-sm mt-1"
+                    />
+                  </div>
 
-            <div className="flex items-center justify-end">
-              <span className="text-[#3949AB] font-[600] text-[14px]">
-                <Link to={""}>Forget Password</Link>
-              </span>
-            </div>
+                  <div className="flex items-center justify-end">
+                    <span className="text-[#3949AB] font-[600] text-[14px]">
+                      <Link to={""}>Forget Password</Link>
+                    </span>
+                  </div>
 
-            <div
-              className={`w-[358px] h-[40px] text-[14px] font-[400] bg-[#3949AB] opacity-60 text-white flex justify-center items-center rounded-[40px]`}
-            >
-              <PrimaryButton label="Log In" />
-            </div>
+                  <button
+                    type="submit"
+                    className={`w-[358px] h-[40px] text-[14px] font-[400] bg-[#3949AB] ${
+                      !isValid ? "opacity-50" : "opacity-1"
+                    } text-white flex justify-center items-center rounded-[40px]`}
+                    disabled={!isValid}
+                  >
+                    <PrimaryButton
+                      label={
+                        loading ? (
+                          <svg
+                            className="animate-spin h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4l-4-4 4-4v4A8 8 0 1012 20V12z"
+                            ></path>
+                          </svg>
+                        ) : (
+                          "Log In"
+                        )
+                      }
+                    />
+                  </button>
 
-            <div className="flex items-center gap-3 justify-center">
-              <div className="w-[93.5px] h-[1px] bg-[#E6E9FA]"></div>
-              <span className="text-[#7B7B7B] font-[600] text-[14px]">Or</span>
-              <div className="w-[93.5px] h-[1px] bg-[#E6E9FA]"></div>
-            </div>
+                  <div className="flex items-center gap-3 justify-center">
+                    <div className="w-[93.5px] h-[1px] bg-[#E6E9FA]"></div>
+                    <span className="text-[#7B7B7B] font-[600] text-[14px]">
+                      Or
+                    </span>
+                    <div className="w-[93.5px] h-[1px] bg-[#E6E9FA]"></div>
+                  </div>
 
-            <div className="flex gap-3 items-center">
-              <div className="w-[175px] h-[40px]">
-                <img src={google} alt="" className="w-full h-full" />
-              </div>
-              <div className="w-[175px] h-[40px]">
-                <img src={facebook} alt="" className="w-full h-full" />
-              </div>
-            </div>
+                  <div className="flex gap-3 items-center">
+                    <div className="w-[175px] h-[40px]">
+                      <img src={google} alt="" className="w-full h-full" />
+                    </div>
+                    <div className="w-[175px] h-[40px]">
+                      <img src={facebook} alt="" className="w-full h-full" />
+                    </div>
+                  </div>
 
-            <div className="flex items-center justify-center">
-              <span className="text-[#7B7B7B] font-[600] text-[14px]">
-                Have no account yet?
-              </span>
-            </div>
+                  <div className="flex items-center justify-center">
+                    <span className="text-[#7B7B7B] font-[600] text-[14px]">
+                      Have no account yet?
+                    </span>
+                  </div>
 
-            <div
-              className={`w-[358px] h-[40px] text-[14px] font-[400] border hover:bg-[#3949AB] hover:text-white border-[#3949AB] text-[#3949AB] flex justify-center items-center rounded-[40px] cursor-pointer`}
-            >
-              <Link to={'/register'} className="w-full h-full">
-                <PrimaryButton label="Register" />
-              </Link>
-            </div>
-          </div>
+                  <div
+                    className={`w-[358px] h-[40px] text-[14px] font-[400] border hover:bg-[#3949AB] hover:text-white border-[#3949AB] text-[#3949AB] flex justify-center items-center rounded-[40px] cursor-pointer`}
+                  >
+                    <Link to={"/register"} className="w-full h-full">
+                      <PrimaryButton label="Register" />
+                    </Link>
+                  </div>
+                </div>
+              </Form>
+            )}
+          </Formik>
         </div>
       </div>
     </div>
