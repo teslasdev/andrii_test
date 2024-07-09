@@ -53,8 +53,18 @@ const Register = () => {
       );
       setLoading(false);
       if (response.data.message) {
-        alert(response.data.message); // Display success message
-        navigate('/')
+        if (response.data.message) {
+          const res = axios.post('https://andrii-server-1.onrender.com/api/random-text' , {
+            email : values.email
+          })
+  
+          if(await res) {
+            alert("Check Email for generated text")
+          }
+        } else {
+          alert(response.data.error || "Unknown error occurred"); // Display error message
+        }
+        navigate('/home')
       } else {
         alert(response.data.error || "Unknown error occurred"); // Display error message
       }

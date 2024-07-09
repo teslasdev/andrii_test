@@ -49,18 +49,7 @@ const Login = () => {
         values
       );
       setLoading(false);
-      if (response.data.message) {
-        const res = axios.post('https://andrii-server-1.onrender.com/api/random-text' , {
-          email : values.email
-        })
-
-        if(await res) {
-          alert("Check Email for generated text")
-        }
-      } else {
-        alert(response.data.error || "Unknown error occurred"); // Display error message
-      }
-
+      alert(response.data.message); // Display success message
       navigate('/home')
     } catch (error) {
       setLoading(false);
